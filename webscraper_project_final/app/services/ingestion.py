@@ -1,9 +1,9 @@
 import os
 import re
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
 from langchain_groq import ChatGroq
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 CHROMA_DIR = "chroma_db"
 KNOWLEDGE_BASE = "KnowledgeBase.md"
@@ -11,7 +11,7 @@ COLLECTION_NAME = "knowledge"
 
 
 def get_embeddings():
-    return SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 
 def get_vectorstore():
@@ -47,7 +47,11 @@ def ingest_markdown(filepath: str = KNOWLEDGE_BASE) -> str:
         embedding_function=embeddings,
         persist_directory=CHROMA_DIR,
     )
-    vectorstore.add_texts(chunks)
+    #vectorstore.add_texts(chunks)
+    BATCH_SIZE = 500
+    for i in range(0, len(chunks), BATCH_SIZE):
+        batch = chunks[i : i + BATCH_SIZE]
+        vectorstore.add_texts(batch)
 
     return f"Ingested {len(chunks)} chunks into vector store."
 
@@ -73,7 +77,7 @@ def summarize_knowledge_base() -> str:
     return response.content
 
 
-def generate_faqs() -> list[dict]:
+async def generate_faqs() -> list[dict]:
     """Generate FAQ pairs from the knowledge base."""
     if not os.path.exists(KNOWLEDGE_BASE):
         return []

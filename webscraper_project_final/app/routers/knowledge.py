@@ -23,7 +23,7 @@ async def get_summary():
 @router.get("/faqs")
 async def get_faqs():
     try:
-        faqs = generate_faqs()
+        faqs = await generate_faqs()
         return {"faqs": faqs}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,20 +1,17 @@
 from langchain_groq import ChatGroq
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_classic.chains.retrieval import create_retrieval_chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 from app.services.ingestion import get_vectorstore
 
-SYSTEM_PROMPT = PromptTemplate(
-    input_variables=["context", "question"],
-    template="""You are a helpful assistant that answers questions based on the provided website content.
+SYSTEM_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful assistant that answers questions based on the provided website content.
 Use ONLY the context below to answer. If the answer is not found in the context, say "I don't have enough information about that from the scraped content."
 
 Context:
-{context}
-
-Question: {question}
-
-Answer:"""
-)
+{context}"""),
+("human", "{input}")
+])
 
 
 def ask_chatbot(query: str, language: str = "en") -> dict:
@@ -29,27 +26,22 @@ def ask_chatbot(query: str, language: str = "en") -> dict:
         max_tokens=1000,
     )
 
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={"prompt": SYSTEM_PROMPT},
-    )
+    qa_chain = create_stuff_documents_chain(llm=llm, prompt=SYSTEM_PROMPT)
+    chain = create_retrieval_chain(retriever=retriever, combine_docs_chain=qa_chain)
 
     if language and language != "en":
         query = f"(Please respond in {language}.) {query}"
 
-    result = chain.invoke({"query": query})
+    result = chain.invoke({"input": query})
 
     sources = list({
         doc.metadata.get("source", "")
-        for doc in result.get("source_documents", [])
+        for doc in result.get("context", [])
         if doc.metadata.get("source")
     })
 
     return {
-        "answer": result.get("result", "No answer found."),
+        "answer": result.get("answer", "No answer found."),
         "sources": sources,
     }
 

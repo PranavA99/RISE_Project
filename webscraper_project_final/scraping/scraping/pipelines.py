@@ -17,7 +17,7 @@ class MarkdownConversionPipeline:
 
         title = item.get("title", "Untitled")
         url = item.get("url", "")
-        content = " ".join(item.get("content", []))
+        content = item.get("content", "")
 
         if not content:
             spider.logger.warning("Empty content found.")
