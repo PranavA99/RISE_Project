@@ -1,5 +1,6 @@
 import os
 import re
+from ..cache import _load_cache
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_groq import ChatGroq
@@ -8,7 +9,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 CHROMA_DIR = "chroma_db"
 KNOWLEDGE_BASE = "KnowledgeBase.md"
 COLLECTION_NAME = "knowledge"
-
+CACHE_DATA = _load_cache()
 
 def get_embeddings():
     return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -31,6 +32,10 @@ def ingest_markdown(filepath: str = KNOWLEDGE_BASE) -> str:
 
     if not text.strip():
         return "Error: KnowledgeBase.md is empty."
+    
+    matching = re.search(r"^URL:\s*(.+)$", text, re.MULTILINE)
+    if matching and matching.group(1).strip() in CACHE_DATA.keys():
+        return "This content has already been ingested."
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,

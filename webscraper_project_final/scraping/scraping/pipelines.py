@@ -1,5 +1,5 @@
 from itemadapter import ItemAdapter
-
+from markdownify import markdownify as md
 
 class MarkdownConversionPipeline:
 
@@ -23,12 +23,13 @@ class MarkdownConversionPipeline:
             spider.logger.warning("Empty content found.")
             return item
 
+        markdown_content = md(content)
         markdown = f"""
 # {title}
 
 URL: {url}
 
-{content}
+{markdown_content}
 
 ---
 

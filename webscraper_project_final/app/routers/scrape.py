@@ -1,7 +1,7 @@
 import os
 import subprocess
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 from app.cache import is_url_ingested, save_ingested_url, get_all_ingested_urls, remove_ingested_url
 from app.services.ingestion import ingest_markdown
